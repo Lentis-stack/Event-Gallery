@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="g" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1410"/>
+      <stop offset="50%" stop-color="#4a3a28"/>
+      <stop offset="100%" stop-color="#17100b"/>
+    </linearGradient>
+    <radialGradient id="s" cx="40%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#e0c48a" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#e0c48a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#g)"/>
+  <rect width="1600" height="1000" fill="url(#s)"/>
+  <circle cx="1100" cy="350" r="140" fill="#e0c48a" opacity="0.12"/>
+  <circle cx="1100" cy="650" r="110" fill="#e0c48a" opacity="0.10"/>
+  <text x="800" y="500" text-anchor="middle" font-family="Georgia, serif" font-size="64" fill="#f5efe6" opacity="0.85" letter-spacing="8">The Celebration</text>
+  <text x="800" y="555" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="22" fill="#f5efe6" opacity="0.5" letter-spacing="6">PHOTO 04</text>
+</svg>

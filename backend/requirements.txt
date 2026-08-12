@@ -1,0 +1,74 @@
+# ============================================================
+# Lentis Gallery — Backend Python Dependencies
+# ------------------------------------------------------------
+# This file lists every Python package the backend needs.
+# pip reads it and installs everything with one command.
+#
+# We install them in a virtual environment (venv) so they don't
+# clash with other Python projects on your machine.
+# ============================================================
+
+# --- Web framework -------------------------------------------
+# FastAPI is the web framework. It turns Python functions into
+# real HTTP endpoints and auto-generates API documentation.
+fastapi==0.115.6
+
+# Uvicorn is the ASGI server that actually RUNS FastAPI.
+# "ASGI" is just the modern standard for Python web apps.
+uvicorn[standard]==0.34.0
+
+# --- Data validation / config --------------------------------
+# Pydantic validates incoming request data and lets us define
+# typed settings loaded from .env. Pydantic v2 is the current
+# major version and is what FastAPI uses internally.
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# email-validator powers Pydantic's EmailStr type (used in auth
+# schemas to validate email addresses).
+email-validator==2.2.0
+
+# --- Database (PostgreSQL) -----------------------------------
+# SQLAlchemy is the ORM: it maps Python classes to database
+# tables so we write Python instead of raw SQL.
+# "psycopg[binary]" is the PostgreSQL driver — the low-level
+# library that actually talks to PostgreSQL over the network.
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+
+# Alembic handles database migrations: version-controlled
+# changes to the schema so we can evolve it safely.
+alembic==1.14.0
+
+# --- Password hashing (Phase 2) ------------------------------
+# Argon2id is the current recommended password hashing function.
+argon2-cffi==23.1.0
+
+# --- JWT tokens (Phase 2) ------------------------------------
+# PyJWT creates and verifies signed access tokens.
+PyJWT==2.10.1
+
+# --- File uploads (Phase 5) ----------------------------------
+# python-multipart parses multipart/form-data so FastAPI can accept
+# file uploads via UploadFile/File. Required for the media endpoints.
+python-multipart==0.0.20
+
+# --- Media processing (Phase 6) ------------------------------
+# Pillow is the image-processing library. It opens, inspects, and
+# re-encodes images (JPEG/PNG/WebP/GIF) to create optimized
+# derivatives and thumbnails. It is pure Python (with C wheels) and
+# does NOT require a system binary.
+Pillow==12.3.0
+
+# redis is the Python client for the Redis server. Redis is an
+# in-memory data store we use as a lightweight JOB QUEUE: a fast
+# buffer where the API drops "process this media" tasks and the
+# worker picks them up.
+redis==8.1.0
+
+# RQ (Redis Queue) is the tiny job-queue library. It reads jobs out
+# of Redis and runs them in a separate worker process, so expensive
+# video encoding never blocks an API request. RQ was chosen over
+# Celery because it is dramatically simpler while still being
+# production-capable for a single event platform.
+rq==2.10.0

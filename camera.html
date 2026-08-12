@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wedding Guest - Capture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="page" data-page="camera">
+    <div class="bg" id="cameraBg" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="brand" aria-label="Wedding Doodle Logo">
+        <div class="brand-doodle" id="doodleLogo2" aria-hidden="true">✿</div>
+        <div class="brand-text">
+          <div class="brand-title">Wedding</div>
+          <div class="brand-subtitle">Memories</div>
+        </div>
+      </div>
+
+      <div class="pill" id="guestPill" title="Guest name">Guest</div>
+    </header>
+
+    <section class="center wide">
+      <div class="section-head">
+        <h2 class="section-title">Take a photo or video</h2>
+        <p class="section-subtitle" id="guestSubtitle">Say hello to the camera!</p>
+      </div>
+
+      <div class="camera-shell">
+
+        <div class="video-wrap" id="videoWrap">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="captureCanvas" class="hidden"></canvas>
+        </div>
+
+        <div class="controls" role="group" aria-label="Capture controls">
+          <button class="btn btn-primary" id="enableCameraBtn" type="button">Enable Camera</button>
+          <button class="btn btn-ghost" id="switchCameraBtn" type="button" disabled>Switch Camera</button>
+          <button class="btn btn-primary" id="capturePhotoBtn" type="button" disabled>Capture Photo</button>
+          <button class="btn btn-primary" id="recordVideoBtn" type="button" disabled>Record Video</button>
+          <button class="btn btn-ghost" id="stopRecordBtn" type="button" disabled>Stop</button>
+        </div>
+
+        <div class="thumbs" aria-label="Captured items">
+          <div id="capturedItems" class="thumb-grid"></div>
+        </div>
+
+        <form id="uploadForm" class="upload-form" autocomplete="off">
+          <label class="label" for="fileInput">Or upload another photo/video</label>
+          <input id="fileInput" class="file" type="file" accept="image/*,video/*" multiple />
+          <button class="btn btn-secondary" type="button" id="uploadBtn">Upload to Gallery</button>
+          <div class="hint" id="uploadHint">Uploads will go to the backend and appear in the host gallery.</div>
+        </form>
+
+
+        <div class="actions-row">
+          <button class="btn btn-ghost" type="button" id="clearBtn">Clear</button>
+          <button class="btn btn-primary" type="button" id="uploadAllBtn" title="Uploads everything currently shown in the grid">Upload All</button>
+          <a class="btn btn-primary" id="backToRsvp" href="./index.html">Back</a>
+
+        </div>
+      </div>
+    </section>
+
+    <footer class="bottom-note">
+      <span>Camera & Upload • Mobile-friendly</span>
+    </footer>
+  </main>
+
+  <script>
+    // Use same-origin by default so mobile can reach the backend.
+    // If backend is elsewhere, set window.BACKEND_BASE_URL before this script.
+    window.BACKEND_BASE_URL = window.BACKEND_BASE_URL ?? '';
+  </script>
+  <script type="module" src="./camera.js"></script>
+</body>
+</html>

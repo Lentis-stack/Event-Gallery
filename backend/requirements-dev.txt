@@ -1,0 +1,15 @@
+# ============================================================
+# Lentis Gallery — Dev/Test Dependencies
+# ------------------------------------------------------------
+# These are ONLY needed for development and testing, not for
+# running the backend in production.
+#
+# Install with:
+#   .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+# ============================================================
+
+# Test runner.
+pytest==8.3.4
+
+# FastAPI's TestClient uses httpx under the hood.
+httpx==0.28.1

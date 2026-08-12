@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b1f1a"/>
+      <stop offset="60%" stop-color="#4a3320"/>
+      <stop offset="100%" stop-color="#120d09"/>
+    </linearGradient>
+    <radialGradient id="s" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#d9bd85" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#d9bd85" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#g)"/>
+  <rect width="1600" height="1000" fill="url(#s)"/>
+  <rect x="600" y="420" width="400" height="260" rx="12" fill="none" stroke="#c8a96a" stroke-width="2" opacity="0.5"/>
+  <text x="800" y="520" text-anchor="middle" font-family="Georgia, serif" font-size="60" fill="#f5efe6" opacity="0.85" letter-spacing="6">Dusk Table</text>
+  <text x="800" y="575" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="22" fill="#f5efe6" opacity="0.5" letter-spacing="6">PHOTO 03</text>
+</svg>

@@ -1,0 +1,77 @@
+
+> lentis-gallery@0.1.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m1200[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m12:57:33 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FilmShell.tsx[22m
+[2m12:57:33 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FilmShell.tsx[22m
+[2m12:57:33 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FilmShell.tsx[22m
+[2m12:58:13 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/GuestNameForm.tsx[22m
+[2m12:58:25 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CameraPage.tsx[22m
+[2m12:58:34 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CameraPage.tsx[22m
+[2m12:58:44 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m1:02:10 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/EventBranding.tsx[22m
+[2m1:02:50 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FilmShell.tsx[22m
+[2m1:02:50 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FilmShell.tsx[22m
+[2m1:56:49 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPlaceholderPage.tsx, /src/pages/HostPage.tsx, /src/components/EventBranding.tsx, /src/components/CinematicSlideshow.tsx, /src/pages/CameraPage.tsx[22m
+[2m1:57:47 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CameraPage.tsx[22m
+[2m1:58:30 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CameraPage.tsx[22m
+[2m1:59:25 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CameraPage.tsx[22m
+[2m1:59:49 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/GuestPage.tsx[22m
+[2m2:00:12 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/WelcomePage.tsx[22m
+[2m2:00:34 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m2:11:43 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m2:11:43 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m3:14:16 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPlaceholderPage.tsx, /src/pages/HostPage.tsx, /src/components/EventBranding.tsx, /src/components/CinematicSlideshow.tsx, /src/pages/CameraPage.tsx, /src/components/ProviderFooter.tsx[22m
+[2m4:24:22 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx[22m
+[2m5:28:06 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPlaceholderPage.tsx[22m
+[2m5:30:34 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m5:30:56 PM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33mqrcode.react[32m[39m
+[2m5:30:56 PM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m5:39:36 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m5:39:36 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m5:44:26 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m5:52:04 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m5:58:22 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminConsolePage.tsx[22m
+[2m8:12:44 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx, /src/components/EventBranding.tsx, /src/components/CinematicSlideshow.tsx, /src/pages/CameraPage.tsx, /src/components/ProviderFooter.tsx, /src/pages/host/HostSlideshowPage.tsx[22m
+[2m8:12:44 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx, /src/components/EventBranding.tsx, /src/components/CinematicSlideshow.tsx, /src/pages/CameraPage.tsx, /src/components/ProviderFooter.tsx, /src/pages/host/HostSlideshowPage.tsx[22m
+[2m8:12:44 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx, /src/components/EventBranding.tsx, /src/components/CinematicSlideshow.tsx, /src/pages/CameraPage.tsx, /src/components/ProviderFooter.tsx, /src/pages/host/HostSlideshowPage.tsx[22m
+[2m8:16:34 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/WelcomePage.tsx[22m
+[2m8:16:34 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/WelcomePage.tsx[22m
+[2m8:17:07 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/GuestPage.tsx[22m
+[2m8:17:46 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CameraPage.tsx[22m
+[2m11:14:16 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx[22m
+[2m11:14:16 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx[22m
+[2m11:15:05 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx[22m
+[2m11:15:48 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HostPage.tsx[22m
+[2m11:16:37 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminLoginPage.tsx[22m
+[2m11:17:28 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminLoginPage.tsx[22m
+[2m11:18:03 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminLoginPage.tsx[22m
+[2m11:19:00 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/host/HostLayout.tsx[22m
+[2m11:19:00 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/host/HostLayout.tsx[22m
+[2m11:19:36 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/host/HostLayout.tsx[22m
+[2m11:20:06 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/admin/AdminLayout.tsx[22m
+[2m11:20:41 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/admin/AdminLayout.tsx[22m
+[2m11:21:58 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/host/HostGalleryPage.tsx, /src/pages/host/HostOverviewPage.tsx, /src/pages/host/HostSlideshowPage.tsx, /src/pages/host/HostSettingsPage.tsx, /src/pages/host/HostSharePage.tsx, /src/pages/admin/AdminConsolePage.tsx, /src/pages/admin/AdminCreateEventPage.tsx, /src/components/admin/EventCard.tsx[22m
+[2m11:22:49 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/host/HostGalleryPage.tsx, /src/pages/host/HostOverviewPage.tsx, /src/pages/host/HostSlideshowPage.tsx, /src/pages/host/HostSettingsPage.tsx, /src/pages/host/HostSharePage.tsx, /src/pages/admin/AdminConsolePage.tsx, /src/pages/admin/AdminCreateEventPage.tsx, /src/components/admin/EventCard.tsx[22m
+[2m11:25:33 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m11:26:19 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m11:26:19 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m11:26:51 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/host/HostSlideshowPage.tsx[22m
+[2m11:27:50 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m11:30:39 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/styles/components.css[22m
+[2m1:36:07 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/host/HostGalleryPage.tsx, /src/pages/host/HostOverviewPage.tsx, /src/pages/host/HostSlideshowPage.tsx, /src/pages/host/HostSettingsPage.tsx, /src/pages/host/HostSharePage.tsx, /src/pages/admin/AdminConsolePage.tsx, /src/pages/admin/AdminCreateEventPage.tsx, /src/components/admin/EventCard.tsx[22m
+[2m3:18:00 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/host/HostGalleryPage.tsx, /src/pages/host/HostOverviewPage.tsx, /src/pages/host/HostSlideshowPage.tsx, /src/pages/host/HostSettingsPage.tsx, /src/pages/host/HostSharePage.tsx, /src/pages/admin/AdminConsolePage.tsx, /src/pages/admin/AdminCreateEventPage.tsx, /src/components/admin/EventCard.tsx[22m
+[2m3:18:01 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/host/HostGalleryPage.tsx, /src/pages/host/HostOverviewPage.tsx, /src/pages/host/HostSlideshowPage.tsx, /src/pages/host/HostSettingsPage.tsx, /src/pages/host/HostSharePage.tsx, /src/pages/admin/AdminConsolePage.tsx, /src/pages/admin/AdminCreateEventPage.tsx, /src/components/admin/EventCard.tsx[22m
+[2m3:19:01 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminConsolePage.tsx, /src/pages/admin/AdminCreateEventPage.tsx[22m
+[2m3:26:15 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminCreateEventPage.tsx[22m
+[2m3:26:15 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminCreateEventPage.tsx[22m
+[2m5:20:24 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminCreateEventPage.tsx[22m
+[2m5:20:24 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminCreateEventPage.tsx[22m
+[2m5:20:25 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminCreateEventPage.tsx[22m
+^C^C
