@@ -37,6 +37,12 @@ venv/
 
 # === SECURITY: NEVER commit real environment secrets ===
 .env
+.env.*
+!.env.example
+!.env.production.example
+!.env.operator.example
+.env.operator.local
+.env.production
 
 # Alembic / SQLAlchemy
 # (keep migration scripts, but not runtime caches)
@@ -50,3 +56,9 @@ backend/alembic/*.pyc
 # Local application storage
 backend/uploads/
 backend/storage/
+# Secrets / credentials files - NEVER commit
+SECRETS.md
+Lentis.cre
+*.pem
+*.key
+*.cert

@@ -31,18 +31,13 @@ depends_on = None
 
 def upgrade() -> None:
     # The processing_status enum type (QUEUED/PROCESSING/READY/FAILED).
-    processing_status = sa.Enum(
-        "QUEUED", "PROCESSING", "READY", "FAILED", name="processing_status"
-    )
-    processing_status.create(op.get_bind(), checkfirst=True)
+    op.execute("""DROP TYPE IF EXISTS processing_status; CREATE TYPE processing_status AS ENUM ('QUEUED', 'PROCESSING', 'READY', 'FAILED')""")
 
     op.add_column(
         "media",
         sa.Column(
             "processing_status",
-            sa.Enum(
-                "QUEUED", "PROCESSING", "READY", "FAILED", name="processing_status"
-            ),
+            sa.Text(),
             nullable=False,
             server_default="QUEUED",
         ),
@@ -108,6 +103,4 @@ def downgrade() -> None:
     op.drop_column("media", "processing_attempts")
     op.drop_column("media", "processing_error")
     op.drop_column("media", "processing_status")
-    sa.Enum(
-        "QUEUED", "PROCESSING", "READY", "FAILED", name="processing_status"
-    ).drop(op.get_bind(), checkfirst=True)
+    sa.Text().drop(op.get_bind(), checkfirst=True)

@@ -11,6 +11,7 @@
 import type { Event, EventStatus } from '../../types/event';
 import StatusBadge from '../host/StatusBadge';
 import { buildGuestLink } from '../../services/mockHostService';
+import EventCountdown from '../EventCountdown';
 
 interface EventCardProps {
   event: Event;
@@ -18,12 +19,18 @@ interface EventCardProps {
   onStatusChange: (id: string, status: EventStatus) => void;
   /** Called when the event is archived. */
   onArchive: (id: string) => void;
+  /** Called when the event is permanently deleted. */
+  onDelete?: (id: string) => void;
+  /** Called when the user wants to edit the event. */
+  onEdit: (id: string) => void;
+  /** Called when the user wants to view the host console for this event. */
+  onViewHostConsole?: (slug: string) => void;
 }
 
 /**
  * Admin-facing event card with lifecycle controls.
  */
-export default function EventCard({ event, onStatusChange, onArchive }: EventCardProps) {
+export default function EventCard({ event, onStatusChange, onArchive, onDelete, onEdit, onViewHostConsole }: EventCardProps) {
   const link = event.guestLink || buildGuestLink(event.slug);
 
   return (
@@ -36,11 +43,33 @@ export default function EventCard({ event, onStatusChange, onArchive }: EventCar
         <StatusBadge status={event.status} />
       </div>
 
+      {/* Slideshow preview — shows first image if available */}
+      {event.slides.length > 0 && (
+        <div className="admin-event-card__slides">
+          {event.slides.slice(0, 4).map((slide, i) => (
+            <img key={i} src={slide.src} alt={slide.alt} className="admin-event-card__slide-thumb" loading="lazy" />
+          ))}
+          {event.slides.length > 4 && (
+            <span className="admin-event-card__slide-more">+{event.slides.length - 4}</span>
+          )}
+        </div>
+      )}
+
       <div className="admin-event-card__meta">
         <span>Host: {event.hostName}</span>
         <span>Date: {event.eventDate}</span>
         <span>Uploads: {event.totalUploads}</span>
       </div>
+
+      {/* Countdown timer */}
+      {!event.archived && (
+        <EventCountdown
+          eventDate={event.eventDate}
+          status={event.status}
+          compact
+          className="admin-event-card__countdown"
+        />
+      )}
 
       <div className="admin-event-card__link">
         <span className="admin-event-card__link-label">Guest link</span>
@@ -48,13 +77,29 @@ export default function EventCard({ event, onStatusChange, onArchive }: EventCar
       </div>
 
       <div className="admin-event-card__actions">
+        <button
+          type="button"
+          className="admin-event-card__btn is-edit"
+          onClick={() => onEdit(event.id)}
+        >
+          Edit
+        </button>
+        {onViewHostConsole && (
+          <button
+            type="button"
+            className="admin-event-card__btn is-host-console"
+            onClick={() => onViewHostConsole(event.slug)}
+          >
+            View Host Console
+          </button>
+        )}
         {event.status !== 'live' && (
           <button
             type="button"
             className="admin-event-card__btn is-live"
             onClick={() => onStatusChange(event.id, 'live')}
           >
-            Set Live
+            {event.status === 'not_started' ? 'Start Event' : 'Set Live'}
           </button>
         )}
         {event.status !== 'ended' && (
@@ -73,6 +118,15 @@ export default function EventCard({ event, onStatusChange, onArchive }: EventCar
             onClick={() => onArchive(event.id)}
           >
             Archive
+          </button>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            className="admin-event-card__btn is-delete"
+            onClick={() => onDelete(event.id)}
+          >
+            Delete
           </button>
         )}
       </div>

@@ -1,0 +1,62 @@
+# ============================================================
+# Lentis Gallery — Frontend .dockerignore
+# ============================================================
+# Excludes files not needed for the frontend production build.
+# ============================================================
+
+# Dependencies (reinstalled in Docker)
+node_modules
+
+# Build output (rebuilt in Docker)
+dist
+dist-ssr
+
+# Git
+.git
+.gitignore
+
+# Environment files (secrets never in images)
+.env
+.env.*
+!.env.example
+
+# IDE / Editor
+.vscode
+.idea
+
+# Logs
+logs
+*.log
+
+# Python / Backend (not needed for frontend build)
+backend
+*.py
+__pycache__
+
+# Local storage
+storage
+
+# Test files
+*.test.*
+*.spec.*
+coverage
+
+# Documentation
+*.md
+TODO.md
+SECRETS.md
+
+# Legacy prototype files
+camera.html
+camera.js
+main.js
+styles.css
+devlog.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (don't include in build context)
+Dockerfile*
+docker-compose*

@@ -77,13 +77,17 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 def validate_password_strength(password: str) -> str | None:
     """
-    Lightweight password policy check. Returns an error message if
+    Password policy check. Returns an error message if
     the password is too weak, otherwise None.
+    SEC-022: Minimum 10 characters + common password blocking.
     We keep rules simple and clear (length + not-trivial).
     """
-    if len(password) < 8:
-        return "Password must be at least 8 characters."
-    if password.lower() in ("password", "password123", "lentis", "lentis123"):
+    if len(password) < 10:
+        return "Password must be at least 10 characters."
+    if password.lower() in (
+        "password", "password123", "lentis", "lentis123",
+        "1234567890", "qwerty1234", "letmein1234",
+    ):
         return "That password is too common. Choose a stronger one."
     return None
 

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { eventConfig } from '../config/event';
+import { getActiveEventConfig } from '../services/eventBridge';
 
 interface EventBrandingProps {
   /** If true, shows the platform wordmark above the event name. */
@@ -18,6 +18,7 @@ export default function EventBranding({
   as = 'h1',
   className = '',
 }: EventBrandingProps) {
+  const config = getActiveEventConfig();
   const MotionHeading = as === 'h1' ? motion.h1 : motion.h2;
   return (
     <div className={`event-branding ${className}`.trim()}>
@@ -28,7 +29,7 @@ export default function EventBranding({
           animate={{ opacity: 1 }}
           transition={{ duration: 1, ease: 'easeOut' }}
         >
-          {eventConfig.platformName}
+          {config.platformName}
         </motion.p>
       )}
       <MotionHeading
@@ -37,7 +38,7 @@ export default function EventBranding({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.2, ease: 'easeOut', delay: 0.15 }}
       >
-        {eventConfig.name}
+        {config.name}
       </MotionHeading>
       <motion.p
         className="event-branding__subtitle"
@@ -45,7 +46,7 @@ export default function EventBranding({
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2, ease: 'easeOut', delay: 0.4 }}
       >
-        {eventConfig.subtitle}
+        {config.subtitle}
       </motion.p>
     </div>
   );

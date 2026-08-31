@@ -30,7 +30,9 @@ import logging
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import check_guest_registration_rate_limit
 from app.db.session import get_db
+from app.schemas.event_guest import PrivateGuestLoginRequest, PrivateGuestLoginResponse, InvitedGuestOut
 from app.schemas.guest import (
     GuestMeResponse,
     GuestOut,
@@ -39,6 +41,7 @@ from app.schemas.guest import (
     GuestSessionInfo,
 )
 from app.services import guests as guest_service
+from app.services import event_guests as event_guest_service
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +82,16 @@ def register_guest(
     db: Session = Depends(get_db),
 ) -> GuestRegisterResponse:
     ip, ua = _client_meta(request)
+
+    # SEC-005: Rate limit guest registration per IP per event.
+    allowed, retry_after = check_guest_registration_rate_limit(ip, slug)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many registration attempts. Please try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     guest, session, raw_token = guest_service.register_guest(
         db, slug, body, ip, ua
     )
@@ -152,3 +165,36 @@ def _require_token(token: str | None) -> None:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Guest session token is required.",
         )
+
+
+# ============================================================
+# POST /api/events/{slug}/guests/private-login (PRIVATE EVENT)
+# ============================================================
+
+@router.post(
+    "/api/events/{slug}/guests/private-login",
+    response_model=PrivateGuestLoginResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Login as a private event guest",
+    description=(
+        "Authenticates an invited guest for a private event using "
+        "name + password. Returns a session token on success."
+    ),
+)
+def private_guest_login(
+    slug: str,
+    body: PrivateGuestLoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> PrivateGuestLoginResponse:
+    ip, ua = _client_meta(request)
+
+    invited_guest, session, raw_token = event_guest_service.private_guest_login(
+        db, slug, body.name, body.password, ip, ua
+    )
+
+    return PrivateGuestLoginResponse(
+        guest=InvitedGuestOut.model_validate(invited_guest),
+        session_token=raw_token,
+        expires_at=session.expires_at,
+    )

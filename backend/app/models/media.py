@@ -43,13 +43,42 @@ class MediaType(str, enum.Enum):
     VIDEO = "VIDEO"
 
 
+class MediaRole(str, enum.Enum):
+    """Role of this media within the event. Controls where it appears."""
+    HERO = "HERO"
+    SLIDESHOW = "SLIDESHOW"
+    GALLERY = "GALLERY"
+    HOST_SLIDESHOW = "HOST_SLIDESHOW"
+
+
+class MediaSource(str, enum.Enum):
+    """Who uploaded this media. Controls visibility and filtering."""
+    ADMIN = "ADMIN"
+    GUEST = "GUEST"
+
+
+class MediaPage(str, enum.Enum):
+    """Which page this media is assigned to. Controls slideshow display."""
+    LANDING = "LANDING"
+    GUEST = "GUEST"
+    HOST = "HOST"
+    CAMERA = "CAMERA"
+
+
 class MediaStatus(str, enum.Enum):
     """
-    Simple lifecycle. UPLOADED = bytes are in object storage.
-    PENDING = awaiting processing/moderation (future Phase 7).
+    Simple lifecycle.
+    UPLOADED = admin-uploaded, immediately visible.
+    PENDING = guest-uploaded, awaiting host approval.
+    APPROVED = approved by host.
+    HIDDEN = approved but hidden from public gallery by host.
+    REJECTED = rejected by host.
     """
-    UPLOADED = "UPLOADED"   # bytes are in object storage
-    PENDING = "PENDING"     # awaiting processing/moderation (future)
+    UPLOADED = "UPLOADED"   # admin-uploaded, immediately visible
+    PENDING = "PENDING"     # guest-uploaded, awaiting approval
+    APPROVED = "APPROVED"   # approved by host
+    HIDDEN = "HIDDEN"       # approved but hidden by host
+    REJECTED = "REJECTED"   # rejected by host
 
 
 class ProcessingStatus(str, enum.Enum):
@@ -69,9 +98,8 @@ class ProcessingStatus(str, enum.Enum):
 
 class ModerationStatus(str, enum.Enum):
     """
-    Phase 7. The host-controlled moderation status. This is separate
-    from the processing status. A media item can be fully processed
-    but hidden by the host.
+    Host-controlled visibility. This is the legacy moderation status.
+    Kept for backward compatibility. New code should use MediaStatus.
         VISIBLE — appears in the main gallery
         HIDDEN  — removed from the main gallery by a host
     """
@@ -172,6 +200,36 @@ class Media(Base):
     # For videos: duration in seconds.
     duration_seconds: Mapped[float | None] = mapped_column(nullable=True)
 
+    # --- Phase 3: Media Role & Position -------------------------------
+    # Controls WHERE this media appears: hero, slideshow, or gallery.
+    # Only one HERO per event (enforced at service layer).
+    media_role: Mapped[MediaRole] = mapped_column(
+        Enum(MediaRole, name="media_role"),
+        nullable=False,
+        default=MediaRole.GALLERY,
+        server_default="GALLERY",
+    )
+    # Position within slideshow (1-indexed). Only meaningful for
+    # SLIDESHOW role. NULL for hero and gallery media.
+    position: Mapped[int | None] = mapped_column(nullable=True)
+
+    # --- Phase 13.4: Media Source & Page ------------------------------
+    # Source distinguishes admin-uploaded vs guest-uploaded media.
+    source: Mapped[MediaSource] = mapped_column(
+        Enum(MediaSource, name="media_source"),
+        nullable=False,
+        default=MediaSource.ADMIN,
+        server_default="ADMIN",
+    )
+    # Page indicates which page this media is assigned to.
+    # Only meaningful for SLIDESHOW/HOST_SLIDESHOW roles.
+    page: Mapped[MediaPage | None] = mapped_column(
+        Enum(MediaPage, name="media_page"),
+        nullable=True,
+        default=None,
+        server_default=None,
+    )
+
     # --- Phase 7: Host Media Moderation -----------------------------
     # Host-controlled visibility in the main gallery. Default is VISIBLE.
     moderation_status: Mapped[ModerationStatus] = mapped_column(
@@ -225,6 +283,12 @@ class Media(Base):
 # Composite indexes for the queries the quota + listing code runs:
 #   - Count an event's photos/videos: (event_id, media_type)
 #   - List a guest's media: (event_id, guest_id)
+#   - Gallery listing: (event_id, status, created_at)
+#   - Processing worker queue: (processing_status, event_id)
+#   - Role-based queries: (event_id, media_role, status)
 Index("ix_media_event_type", Media.event_id, Media.media_type)
 Index("ix_media_event_guest", Media.event_id, Media.guest_id)
 Index("ix_media_created_at", Media.created_at)
+Index("ix_media_processing_status", Media.processing_status)
+Index("ix_media_event_role_status", Media.event_id, Media.media_role, Media.status)
+Index("ix_media_event_status_created", Media.event_id, Media.status, Media.created_at)

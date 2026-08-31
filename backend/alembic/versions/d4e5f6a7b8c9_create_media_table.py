@@ -32,10 +32,8 @@ depends_on = None
 
 def upgrade() -> None:
     # Success: create the enum types first.
-    media_type = sa.Enum("PHOTO", "VIDEO", name="media_type")
-    media_type.create(op.get_bind(), checkfirst=True)
-    media_status = sa.Enum("UPLOADED", "PENDING", name="media_status")
-    media_status.create(op.get_bind(), checkfirst=True)
+    op.execute("""DROP TYPE IF EXISTS media_type; CREATE TYPE media_type AS ENUM ('PHOTO', 'VIDEO')""")
+    op.execute("""DROP TYPE IF EXISTS media_status; CREATE TYPE media_status AS ENUM ('UPLOADED', 'PENDING')""")
 
     # --- media table ---
     op.create_table(
@@ -51,7 +49,7 @@ def upgrade() -> None:
         sa.Column("storage_key", sa.String(length=500), nullable=False),
         sa.Column(
             "media_type",
-            sa.Enum("PHOTO", "VIDEO", name="media_type"),
+            sa.Text(),
             nullable=False,
         ),
         sa.Column("mime_type", sa.String(length=120), nullable=False),
@@ -60,7 +58,7 @@ def upgrade() -> None:
         sa.Column("checksum", sa.String(length=64), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("UPLOADED", "PENDING", name="media_status"),
+            sa.Text(),
             nullable=False,
             server_default="UPLOADED",
         ),
@@ -88,9 +86,9 @@ def downgrade() -> None:
     op.drop_index("ix_media_guest_id", table_name="media")
     op.drop_index("ix_media_event_id", table_name="media")
     op.drop_table("media")
-    sa.Enum("UPLOADED", "PENDING", name="media_status").drop(
+    sa.Text().drop(
         op.get_bind(), checkfirst=True
     )
-    sa.Enum("PHOTO", "VIDEO", name="media_type").drop(
+    sa.Text().drop(
         op.get_bind(), checkfirst=True
     )

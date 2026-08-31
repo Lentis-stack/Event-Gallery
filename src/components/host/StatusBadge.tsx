@@ -23,8 +23,10 @@ const LABELS: Record<BadgeStatus, string> = {
   pending: 'Pending',
   hidden: 'Hidden',
   draft: 'Draft',
+  not_started: 'Not Started',
   live: 'Live',
   ended: 'Ended',
+  archived: 'Archived',
 };
 
 /**

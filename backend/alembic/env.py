@@ -30,6 +30,7 @@ from app.db.base import Base
 # migrations. As we add models in later phases, import them here.
 # ------------------------------------------------------------------
 import app.models.event  # noqa: F401
+import app.models.event_guest  # noqa: F401
 import app.models.guest  # noqa: F401
 import app.models.media  # noqa: F401
 import app.models.refresh_token  # noqa: F401

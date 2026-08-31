@@ -48,14 +48,16 @@ REFRESH_COOKIE = "lentis_refresh"
 
 def _set_refresh_cookie(response: Response, raw_token: str) -> None:
     """Set the refresh token as an HttpOnly, SameSite cookie."""
-    # In production (HTTPS), Secure=True. In dev (http) we allow it off.
+    # SEC-019: Secure=True unless explicitly in development mode.
+    # This protects staging AND production HTTPS deployments.
+    is_dev = settings.ENVIRONMENT in ("development", "test")
     response.set_cookie(
         key=REFRESH_COOKIE,
         value=raw_token,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         httponly=True,          # JS cannot read it
         samesite="lax",         # CSRF protection
-        secure=settings.ENVIRONMENT == "production",
+        secure=not is_dev,      # SEC-019: True for staging + production
         path="/",
     )
 

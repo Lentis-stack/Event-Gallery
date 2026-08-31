@@ -1,0 +1,58 @@
+# ============================================================
+# Lentis Gallery — Backend .dockerignore
+# ============================================================
+# Excludes files not needed for the backend production image.
+# ============================================================
+
+# Virtual environment (not needed in Docker)
+.venv
+venv
+
+# Environment files (secrets never in images)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE / Editor
+.vscode
+.idea
+
+# Logs
+logs
+*.log
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+
+# Tests (not needed in production image)
+tests
+.pytest_cache
+test_lentis.db
+
+# Local storage (production uses R2)
+storage
+uploads
+
+# Documentation
+*.md
+TODO.md
+PHASE6_PLAN.md
+SECRETS.md
+
+# Dev dependencies
+requirements-dev.txt
+
+# Docker files
+Dockerfile*
+docker-compose*
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -6,7 +6,7 @@ import EventBranding from '../components/EventBranding';
 import NavigationButtons from '../components/NavigationButtons';
 import PageTransition from '../components/PageTransition';
 import SiteFooter from '../components/SiteFooter';
-import { eventConfig } from '../config/event';
+import { getActiveEventConfig } from '../services/eventBridge';
 
 /**
  * Cinematic welcome / hero page.
@@ -14,10 +14,11 @@ import { eventConfig } from '../config/event';
  */
 export default function WelcomePage() {
   const navigate = useNavigate();
+  const eventConfig = getActiveEventConfig();
 
   const handleNavigate = (destination: 'host' | 'guest') => {
     if (destination === 'host') {
-      navigate('/host');
+      navigate('/admin');
     } else {
       navigate('/guest');
     }
@@ -36,21 +37,22 @@ export default function WelcomePage() {
           </div>
 
           <div className="welcome__bottom">
-            <NavigationButtons onNavigate={handleNavigate} />
-            <p className="welcome__hint">Choose how you'd like to join the experience</p>
-
+            {/* Thank-you message shown ABOVE the buttons */}
             {eventConfig.welcomeMessage && (
               <motion.div 
                 className="welcome__message-box"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.8 }}
+                transition={{ duration: 1, delay: 0.3 }}
               >
                 <div className="welcome__message-inner">
                   {eventConfig.welcomeMessage}
                 </div>
               </motion.div>
             )}
+
+            <NavigationButtons onNavigate={handleNavigate} />
+            <p className="welcome__hint">Choose how you'd like to join the experience</p>
           </div>
           <SiteFooter />
         </div>
@@ -58,4 +60,3 @@ export default function WelcomePage() {
     </PageTransition>
   );
 }
-

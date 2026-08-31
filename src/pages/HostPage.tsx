@@ -1,48 +1,71 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import FilmShell from '../components/FilmShell';
-import PageTransition from '../components/PageTransition';
-import SiteFooter from '../components/SiteFooter';
-import { eventConfig } from '../config/event';
-import { demoAccess } from '../config/demoAccess';
+// ============================================================
+// Lentis Gallery — Host Login Page
+// ============================================================
+// Login for the Event Host Console. Uses real backend
+// authentication (JWT via POST /api/auth/login).
+//
+// SECURITY:
+//   - Calls the real backend /api/auth/login endpoint.
+//   - Access token stored in memory (not localStorage).
+//   - Refresh token stored in HttpOnly cookie by the backend.
+//   - On success, redirects to /host/console.
+//   - On failure, shows the error from the backend.
+// ============================================================
 
-/**
- * Host login page — Phase 1 placeholder.
- *
- * SECURITY NOTE: This is a temporary frontend-only mock for the Phase 1
- * experience. It is NOT secure authentication. Real host authentication
- * will be handled by the backend in a later phase.
- */
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { motion } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
+import FilmShell from "../components/FilmShell";
+import PageTransition from "../components/PageTransition";
+import SiteFooter from "../components/SiteFooter";
+import { getActiveEventConfig } from "../services/eventBridge";
+import { login } from "../services/auth";
 
 export default function HostPage() {
   const navigate = useNavigate();
-  const [password, setPassword] = useState('');
+  const eventConfig = getActiveEventConfig();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  /**
+   * Handle form submission: call the real backend login API.
+   * If successful, the auth service stores the JWT token
+   * and we redirect to the host console.
+   */
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (!email.trim()) {
+      setError("Please enter your email.");
+      return;
+    }
     if (!password) {
-      setError('Please enter your password.');
+      setError("Please enter your password.");
       return;
     }
 
     setSubmitting(true);
 
-// --- TEMPORARY MOCK AUTH (Phase 1) -------------------------
-    // Replace this whole block with real backend authentication later.
-    if (password === demoAccess.hostPassword) {
-      sessionStorage.setItem('hostAuthed', 'true');
-      navigate('/host/console');
-    } else {
+    try {
+      // Call the real backend authentication endpoint.
+      const user = await login(email.trim(), password);
+
+      // Verify the user has HOST or ADMIN role.
+      if (user.role !== "HOST" && user.role !== "ADMIN") {
+        setError("This account does not have host access.");
+        return;
+      }
+
+      // Success - navigate to the host console.
+      navigate("/host/console");
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please try again.");
       setSubmitting(false);
-      setError('Incorrect password. Please try again.');
     }
-    // ------------------------------------------------------------
   };
 
   return (
@@ -67,7 +90,7 @@ export default function HostPage() {
               className="host-page__title"
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: 'easeOut' }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
             >
               Host Access
             </motion.h2>
@@ -75,7 +98,7 @@ export default function HostPage() {
               className="host-page__subtitle"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
+              transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
             >
               {eventConfig.name} — private console
             </motion.p>
@@ -88,8 +111,23 @@ export default function HostPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
             >
+              <label className="guest-form__label" htmlFor="host-email">
+                Email
+              </label>
+              <input
+                id="host-email"
+                className="guest-form__input"
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                autoComplete="email"
+                disabled={submitting}
+              />
+
               <label className="guest-form__label" htmlFor="host-password">
-                Enter your event password
+                Password
               </label>
               <input
                 id="host-password"
@@ -101,11 +139,11 @@ export default function HostPage() {
                 placeholder="Password"
                 autoComplete="current-password"
                 disabled={submitting}
-                aria-describedby={error ? 'host-password-error' : undefined}
+                aria-describedby={error ? "host-error" : undefined}
                 aria-invalid={error ? true : undefined}
               />
               {error && (
-                <p className="guest-form__error" id="host-password-error" role="alert">
+                <p className="guest-form__error" id="host-error" role="alert">
                   {error}
                 </p>
               )}
@@ -115,17 +153,13 @@ export default function HostPage() {
                 disabled={submitting}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
               >
-                Sign In
+                {submitting ? "Signing in..." : "Sign In"}
               </motion.button>
             </motion.form>
 
-            <p className="host-page__note">
-              Temporary demo. Production authentication arrives with the backend.
-            </p>
-
-<Link to="/admin/login" className="host-page__admin-link">
+            <Link to="/admin/login" className="host-page__admin-link">
               Lentis Admin Console →
             </Link>
           </div>

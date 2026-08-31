@@ -1,43 +1,36 @@
 # ============================================================
 # Lentis Gallery — Media Schemas
-# ------------------------------------------------------------
-# Pydantic schemas for the Media API (Phase 5).
-#
-# WHY SEPARATE SCHEMAS FROM THE ORM MODEL?
-#   * We NEVER return the raw SQLAlchemy Media object. It contains
-#     storage_key (a sensitive internal path) which guests must not
-#     see.
-#   * Schemas are the contract with the frontend. We decide exactly
-#     which fields cross the API boundary.
-#
-# SECURITY:
-#   - storage_key is INTERNAL. It is never returned to guests/hosts.
-#   - We expose only safe, useful metadata.
 # ============================================================
 
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.media import MediaStatus, MediaType, ProcessingStatus
+from app.models.media import MediaPage, MediaRole, MediaSource, MediaType, MediaStatus, ModerationStatus, ProcessingStatus
 
 
 class MediaOut(BaseModel):
-    """Safe view of a media record (no storage_key, no internal paths)."""
+    """Safe view of a media record — includes media_url for display."""
     id: str
     event_id: str
     media_type: MediaType
+    media_role: MediaRole = MediaRole.GALLERY
+    position: int | None = None
+    source: MediaSource = MediaSource.ADMIN
+    page: MediaPage | None = None
     mime_type: str
     original_filename: str
     file_size: int
     status: MediaStatus
-    # Phase 6: async processing state + whether derived variants exist.
     processing_status: ProcessingStatus
     optimized: bool = False
     thumbnail: bool = False
     poster: bool = False
+    media_url: str | None = None
     created_at: datetime
-
+    guest_name: str | None = None
+    moderation_status: ModerationStatus = ModerationStatus.VISIBLE
+    
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -45,48 +38,76 @@ class MediaUploadResponse(BaseModel):
     """Response to a successful media upload."""
     id: str
     media_type: MediaType
+    media_role: MediaRole = MediaRole.GALLERY
+    position: int | None = None
+    source: MediaSource = MediaSource.ADMIN
+    page: MediaPage | None = None
     status: MediaStatus
     processing_status: ProcessingStatus
     original_filename: str
     file_size: int
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+
+class MediaRoleUpdate(BaseModel):
+    """Request to change a media item's role."""
+    media_role: MediaRole
+    page: MediaPage | None = None
+
+
+class MediaReorderRequest(BaseModel):
+    """Request to reorder slideshow media."""
+    ordered_ids: list[str]
 
 
 class MediaProcessingStatusOut(BaseModel):
-    """
-    The processing-status payload returned by the status endpoint.
-    Distinguishes the ORIGINAL (always present) from the derived
-    OPTIMIZED / THUMBNAIL / POSTER variants. Never exposes storage
-    keys or credentials.
-    """
+    """Media processing status response."""
     media_id: str
-    event_id: str
-    status: ProcessingStatus
-    original: bool = True           # the original is always preserved
+    event_id: str | None = None
+    status: str
+    original: bool = True
     optimized: bool = False
     thumbnail: bool = False
     poster: bool = False
+    processing_error: str | None = None
     processing_attempts: int = 0
-    processing_error: str = ""
-    processed_at: datetime | None = None
-
-
-class MediaListResponse(BaseModel):
-    """List of a guest's own media (or an event's media)."""
-    items: list[MediaOut]
-    total: int
+    processed_at: str | None = None
 
 
 class MediaQuota(BaseModel):
-    """
-    Per-event media usage vs limits. Hosts/admins use this to show
-    capacity (e.g. "Photos: 1,284 / 3,000").
-    """
+    """Media usage stats for an event."""
     photo_count: int
     video_count: int
     max_photos: int
     max_videos: int
-    photo_remaining: int
-    video_remaining: int
+    photo_remaining: int = 0
+    video_remaining: int = 0
+
+
+class MediaListResponse(BaseModel):
+    """Paginated list of media items."""
+    items: list[MediaOut]
+    total: int
+
+
+class RecentMemory(BaseModel):
+    """A recent guest memory for the overview."""
+    id: str
+    media_url: str
+    media_type: MediaType
+    guest_name: str
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HostOverviewStats(BaseModel):
+    """Host dashboard overview statistics."""
+    total_uploads: int
+    photos: int
+    videos: int
+    storage_bytes: int
+    contributing_guests: int
+    recent_memories: list[RecentMemory]
+    
+    model_config = ConfigDict(from_attributes=True)

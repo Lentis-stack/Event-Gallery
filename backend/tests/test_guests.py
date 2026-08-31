@@ -135,13 +135,14 @@ def test_register_for_unknown_slug_404(client: TestClient):
     assert resp.status_code == 404
 
 
-def test_register_for_non_live_event_400(client: TestClient, db: Session):
+def test_register_for_non_live_event_404(client: TestClient, db: Session):
+    """SEC-017: Non-live events return 404 to prevent enumeration."""
     evt = _make_live_event(client, db)
     admin = db.query(User).filter(User.role == UserRole.ADMIN).first()
     # Archive it -> status ARCHIVED, not LIVE.
     client.post(f"/api/admin/events/{evt['id']}/archive", headers=_auth_headers(admin))
     resp = _register_guest(client, evt["slug"], "John")
-    assert resp.status_code == 400
+    assert resp.status_code == 404
 
 
 def test_register_empty_name_rejected(client: TestClient, db: Session):
@@ -335,10 +336,11 @@ def test_service_get_my_guest_event_scoped(client: TestClient, db: Session):
 
 
 def test_service_register_for_ended_event_raises(client: TestClient, db: Session):
+    """SEC-017: Ended events return 404 to prevent enumeration."""
     evt = _make_ended_event(client, db)
     from app.schemas.guest import GuestRegister
     from fastapi import HTTPException
     payload = GuestRegister(name="John")
     with pytest.raises(HTTPException) as exc:
         guest_service.register_guest(db, evt["slug"], payload)
-    assert exc.value.status_code == 400
+    assert exc.value.status_code == 404

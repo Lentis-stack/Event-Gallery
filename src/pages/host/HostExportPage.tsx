@@ -17,7 +17,7 @@
 //      event media.
 // ============================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HostLayout from '../../components/host/HostLayout';
 import ConfirmDialog from '../../components/host/ConfirmDialog';
@@ -29,6 +29,7 @@ import {
   getExportHistory,
   prepareExport,
 } from '../../services/mockHostService';
+import type { Event } from '../../types/event';
 import type { ExportHistoryRecord, ExportSummary } from '../../types/dashboard';
 
 /** A single export destination card (Google Photos / Dropbox). */
@@ -54,21 +55,31 @@ const DESTINATIONS: DestinationInfo[] = [
   },
 ];
 
+const EMPTY_EVENT: Event = { id: '', slug: '', name: 'Loading...', subtitle: '', hostName: '', hostEmail: '', eventDate: '', status: 'draft', theme: 'gold', slides: [], totalUploads: 0, photoCount: 0, videoCount: 0, contributingGuests: 0, storageUsedMb: 0, guestLink: '', archived: false };
+
 export default function HostExportPage() {
-  const [event, setEvent] = useState(() => getAssignedEvent());
-  const [summary] = useState<ExportSummary>(() => getExportSummary());
+  const [event, setEvent] = useState<Event>(EMPTY_EVENT);
+  const [summary, setSummary] = useState<ExportSummary>({ photoCount: 0, videoCount: 0, totalFileCount: 0, estimatedSizeMb: 0 });
   const [destinations] = useState<DestinationInfo[]>(DESTINATIONS);
-  const [history, setHistory] = useState<ExportHistoryRecord[]>(() => getExportHistory());
+  const [history, setHistory] = useState<ExportHistoryRecord[]>([]);
   const [preparing, setPreparing] = useState(false);
   const [prepared, setPrepared] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getAssignedEvent(), getExportSummary(), getExportHistory()]).then(([e, s, h]) => {
+      setEvent(e);
+      setSummary(s);
+      setHistory(h);
+    });
+  }, []);
 
   // Whether the event is still live (so the "Event Complete" action matters).
   const isLive = event.status === 'live';
 
   // Changing the event from Live to Ended requires explicit confirmation.
-  const handleMarkComplete = () => {
-    setEvent(updateAssignedEvent({ status: 'ended' }));
+  const handleMarkComplete = async () => {
+    setEvent(await updateAssignedEvent({ status: 'ended' }));
     setConfirmComplete(false);
   };
 

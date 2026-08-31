@@ -11,6 +11,8 @@ export interface EventImage {
 }
 
 export interface EventProvider {
+  /** Path to the brand logo image (rendered in the footer). */
+  logo?: string;
   /** Business or personal brand name shown in the footer. */
   name: string;
   /** Short call-to-action inviting guests to reach out. */
@@ -47,6 +49,8 @@ export interface EventConfig {
   provider?: EventProvider;
   /** Assigned event host display name. */
   hostName: string;
+  /** Host email for login. */
+  hostEmail?: string;
   /** ISO date string for the event. */
   eventDate: string;
   /** Lifecycle status. */
@@ -71,6 +75,7 @@ export const eventConfig: EventConfig = {
   // Provider contact details shown in the SiteFooter on every page.
   // Edit these values to update the footer across the whole app.
     provider: {
+    logo: '/assets/event/LentisLogo.png',
     name: 'LENTIS TECH',
     message: 'Contact • Socials • Tech',
     phone: '+234 9115074050',

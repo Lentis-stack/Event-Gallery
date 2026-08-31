@@ -25,9 +25,13 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Drop leftover objects from any previous partial runs.
+    op.execute("DROP TABLE IF EXISTS refresh_tokens CASCADE")
+    op.execute("DROP TABLE IF EXISTS users CASCADE")
+    op.execute("DROP TYPE IF EXISTS user_role")
+
     # Create the user_role enum type.
-    user_role = sa.Enum("ADMIN", "HOST", name="user_role")
-    user_role.create(op.get_bind(), checkfirst=True)
+    op.execute("CREATE TYPE user_role AS ENUM ('ADMIN', 'HOST')")
 
     # --- users table ---
     op.create_table(
@@ -37,7 +41,7 @@ def upgrade() -> None:
         sa.Column("password_hash", sa.String(length=255), nullable=False),
         sa.Column(
             "role",
-            sa.Enum("ADMIN", "HOST", name="user_role"),
+            sa.Text(),
             nullable=False,
             server_default="HOST",
         ),
@@ -77,4 +81,4 @@ def downgrade() -> None:
     op.drop_index("ix_users_email", table_name="users")
     op.drop_table("users")
     # Drop the enum type.
-    sa.Enum("ADMIN", "HOST", name="user_role").drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS user_role")

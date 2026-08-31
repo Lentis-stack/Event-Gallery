@@ -28,6 +28,12 @@ export interface GalleryMedia {
   status: MediaStatus;
   /** Optional caption. */
   caption?: string;
+  /** Backend media ID (for presentation media operations). */
+  mediaId?: string;
+  /** Media role (HERO, SLIDESHOW, GALLERY, HOST_SLIDESHOW). */
+  mediaRole?: string;
+  /** Media page placement (LANDING, GUEST, CAMERA, HOST). */
+  page?: string;
 }
 
 /** A guest who contributed to the event gallery. */

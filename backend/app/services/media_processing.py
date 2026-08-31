@@ -257,23 +257,32 @@ def _process_video(db: Session, media: Media, original_path: Path, storage: Stor
 
 def _record_failure(db: Session, media: Media, message: str) -> None:
     """
-    Safely record a processing failure. `message` is a SAFE summary
-    (from our processors), never a raw stack trace or filesystem path.
-    The ORIGINAL and the Media row are always preserved.
+    Safely record a processing failure. SEC-018: Only generic error
+    messages are stored in the DB. Full technical details remain in
+    server logs. Never expose filesystem paths, env vars, or stack
+    traces to clients.
     """
-    safe = (message or "Processing failed.").replace("\n", " ").replace("\r", " ")[:480]
+    # Log full error for server operators (never exposed to clients).
+    logger.error("Media %s processing error (attempt %d): %s",
+                 media.id, media.processing_attempts, message)
+
+    # SEC-018: Store ONLY a generic, safe message in the database.
+    # The client-facing API returns this value — it must never
+    # contain paths, credentials, or internal details.
+    safe_messages = {
+        "image": "Image processing failed.",
+        "video": "Video processing failed.",
+    }
+    safe = safe_messages.get(
+        media.media_type.value.lower() if media.media_type else "",
+        "Media processing failed.",
+    )
 
     if (media.processing_attempts or 0) >= settings.PROCESSING_MAX_RETRIES:
         media.processing_status = ProcessingStatus.FAILED
         media.processing_error = safe
         media.processed_at = datetime.now(timezone.utc)
-        logger.error("Media %s permanently FAILED after %d attempts: %s",
-                     media.id, media.processing_attempts, safe)
     else:
-        # Still have retries left: return to QUEUED so a worker can
-        # pick it up again on the next attempt.
         media.processing_status = ProcessingStatus.QUEUED
         media.processing_error = safe
-        logger.warning("Media %s reprocessing queued (attempt %d): %s",
-                       media.id, media.processing_attempts, safe)
     db.commit()

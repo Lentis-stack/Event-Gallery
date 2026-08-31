@@ -21,7 +21,9 @@ from app.models.user import UserRole
 class LoginRequest(BaseModel):
     """Body for POST /api/auth/login."""
     email: EmailStr = Field(..., description="User email")
-    password: str = Field(..., min_length=1, max_length=128, description="Password")
+    # SEC-023: min_length=10 matches password creation policy.
+    # Using 10 (not 8) to be consistent with create policy.
+    password: str = Field(..., min_length=10, max_length=128, description="Password")
 
 
 # ------------------------------------------------------------

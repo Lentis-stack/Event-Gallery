@@ -72,3 +72,4 @@ redis==8.1.0
 # Celery because it is dramatically simpler while still being
 # production-capable for a single event platform.
 rq==2.10.0
+boto3>=1.34.0

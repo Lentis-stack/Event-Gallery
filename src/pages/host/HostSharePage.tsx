@@ -9,13 +9,18 @@
 // Data is provided by the mock host service (frontend-only).
 // ============================================================
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import HostLayout from '../../components/host/HostLayout';
 import { getAssignedEvent } from '../../services/mockHostService';
+import type { Event } from '../../types/event';
 
 export default function HostSharePage() {
-  const [event] = useState(() => getAssignedEvent());
+  const [event, setEvent] = useState<Event>({ id: '', slug: '', name: 'Loading...', subtitle: '', hostName: '', hostEmail: '', eventDate: '', status: 'draft', theme: 'gold', slides: [], totalUploads: 0, photoCount: 0, videoCount: 0, contributingGuests: 0, storageUsedMb: 0, guestLink: '', archived: false });
+
+  useEffect(() => {
+    getAssignedEvent().then(setEvent);
+  }, []);
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 

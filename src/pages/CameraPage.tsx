@@ -1,227 +1,404 @@
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+// ============================================================
+// Lentis Gallery — Camera Page (/e/:slug/camera)
+// ============================================================
+// Guest camera page. Camera opens immediately after name entry.
+// Photos and videos auto-upload. Guest can view their personal gallery.
+// Supports device media upload with queue, offline awareness, retry.
+// ============================================================
+
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import FilmShell from '../components/FilmShell';
+import ImageSlideshow from '../components/ImageSlideshow';
 import EventBranding from '../components/EventBranding';
 import PageTransition from '../components/PageTransition';
 import SiteFooter from '../components/SiteFooter';
-import { eventConfig } from '../config/event';
+import CameraCapture from '../components/camera/CameraCapture';
+import { useUploadQueue, type UploadQueueItem } from '../hooks/useUploadQueue';
+import {
+  guestUploadMedia,
+  getPublicEventMedia,
+  getGuestMedia,
+  getMediaUrl,
+  type PublicMediaResponse,
+  type GuestMediaItem,
+} from '../services/api';
 
-type CaptureKind = 'photo' | 'video' | 'file';
-
-interface LocalMedia {
-  id: string;
-  url: string;
-  kind: CaptureKind;
-  name: string;
-}
-
-let mediaIdCounter = 0;
-const nextMediaId = () => `media-${Date.now()}-${++mediaIdCounter}`;
-
-/** Media remains on-device until the future Python upload API is introduced. */
 export default function CameraPage() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
   const guestName = sessionStorage.getItem('guestName');
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
-  const [cameraState, setCameraState] = useState<'idle' | 'starting' | 'ready' | 'error'>('idle');
-  const [cameraError, setCameraError] = useState('');
-  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaList, setMediaList] = useState<LocalMedia[]>([]);
+  const guestToken = sessionStorage.getItem('guestToken');
 
-  const stopCamera = useCallback(() => {
-    recorderRef.current?.stop();
-    recorderRef.current = null;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setIsRecording(false);
-  }, []);
+  const [cameraMedia, setCameraMedia] = useState<PublicMediaResponse | null>(null);
+  const [myMedia, setMyMedia] = useState<GuestMediaItem[]>([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<GuestMediaItem | null>(null);
+  const [showUploadQueue, setShowUploadQueue] = useState(false);
 
+  // Upload function
+  const doUpload = useCallback(
+    async (file: File) => {
+      if (!slug || !guestToken) throw new Error('No session');
+      await guestUploadMedia(slug, guestToken, file);
+    },
+    [slug, guestToken]
+  );
+
+  const reloadMedia = useCallback(() => {
+    loadMyMedia();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const uploadQueue = useUploadQueue({ onUpload: doUpload, onComplete: reloadMedia });
+
+  // Redirect if no guest session
   useEffect(() => {
-    if (!guestName) navigate('/guest', { replace: true });
-  }, [guestName, navigate]);
-
-  useEffect(() => () => stopCamera(), [stopCamera]);
-
-  // Clean up all object URLs on unmount.
-  useEffect(() => {
-    return () => {
-      mediaList.forEach((item) => URL.revokeObjectURL(item.url));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const addLocalMedia = (blob: Blob, kind: CaptureKind, name: string) => {
-    const url = URL.createObjectURL(blob);
-    setMediaList((current) => [...current, { id: nextMediaId(), url, kind, name }]);
-  };
-
-  const removeMedia = (id: string) => {
-    setMediaList((current) => {
-      const target = current.find((item) => item.id === id);
-      if (target) URL.revokeObjectURL(target.url);
-      return current.filter((item) => item.id !== id);
-    });
-  };
-
-  const startCamera = async (requestedFacingMode = facingMode) => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera access is not available in this browser. You can still choose a photo or video from your device.');
-      setCameraState('error');
-      return;
+    if (!guestName || !guestToken || !slug) {
+      navigate(slug ? `/e/${slug}` : '/', { replace: true });
     }
+  }, [guestName, guestToken, slug, navigate]);
 
-    stopCamera();
-    setCameraError('');
-    setCameraState('starting');
+  // Load camera slideshow media
+  useEffect(() => {
+    if (!slug) return;
+    getPublicEventMedia(slug).then(setCameraMedia).catch(() => {});
+  }, [slug]);
+
+  // Load personal media
+  const loadMyMedia = useCallback(async () => {
+    if (!slug || !guestToken) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: { facingMode: { ideal: requestedFacingMode } },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCameraState('ready');
+      const res = await getGuestMedia(slug, guestToken);
+      setMyMedia(res.items);
     } catch {
-      setCameraError('We could not open your camera. Allow camera access, then try again—or choose a file instead.');
-      setCameraState('error');
+      // Silently fail
     }
-  };
+  }, [slug, guestToken]);
 
-  const switchCamera = async () => {
-    const nextFacingMode = facingMode === 'environment' ? 'user' : 'environment';
-    setFacingMode(nextFacingMode);
-    await startCamera(nextFacingMode);
-  };
+  useEffect(() => {
+    loadMyMedia();
+  }, [loadMyMedia]);
 
-  const capturePhoto = () => {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth || !video.videoHeight) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      if (blob) addLocalMedia(blob, 'photo', `lentis-photo-${Date.now()}.jpg`);
-    }, 'image/jpeg', 0.92);
-  };
+  const cameraSlides = cameraMedia?.camera_slideshow || [];
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      recorderRef.current?.stop();
-      return;
-    }
-    if (!streamRef.current || !window.MediaRecorder) {
-      setCameraError('Video recording is not supported in this browser. You can still upload a video from your device.');
-      return;
-    }
+  // Auto-upload on camera capture — goes through the queue
+  const handleCapture = useCallback(
+    (file: File) => {
+      uploadQueue.enqueue([file]);
+    },
+    [uploadQueue]
+  );
 
-    recordedChunksRef.current = [];
-    const recorder = new MediaRecorder(streamRef.current);
-    recorderRef.current = recorder;
-    recorder.ondataavailable = (event) => {
-      if (event.data.size) recordedChunksRef.current.push(event.data);
-    };
-    recorder.onstop = () => {
-      const videoBlob = new Blob(recordedChunksRef.current, { type: recorder.mimeType || 'video/webm' });
-      if (videoBlob.size) addLocalMedia(videoBlob, 'video', `lentis-video-${Date.now()}.webm`);
-      setIsRecording(false);
-      recorderRef.current = null;
-    };
-    recorder.start();
-    setIsRecording(true);
-  };
+  // Device media upload — multi-file
+  const handleDeviceUpload = useCallback(
+    (files: File[]) => {
+      // Validate file sizes (50MB max per file)
+      const maxSize = 50 * 1024 * 1024;
+      const valid = files.filter((f) => f.size <= maxSize);
+      if (valid.length < files.length) {
+        // Some files were too large — handled by queue status
+      }
+      if (valid.length > 0) {
+        uploadQueue.enqueue(valid);
+        setShowUploadQueue(true);
+      }
+    },
+    [uploadQueue]
+  );
 
-  const chooseFile = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    files.forEach((file) => {
-      addLocalMedia(file, file.type.startsWith('video/') ? 'video' : 'file', file.name);
-    });
-    event.target.value = '';
-  };
+  // Active upload items (queued + uploading)
+  const activeUploads = uploadQueue.items.filter(
+    (i) => i.status === 'queued' || i.status === 'uploading'
+  );
 
   return (
     <PageTransition>
-      <FilmShell staticImage={eventConfig.images[0]?.src}>
+      <FilmShell>
         <div className="camera-page">
-          <header className="page-top">
-            <Link to="/guest" className="back-link" aria-label="Back to guest entry">← Back</Link>
-          </header>
+          {/* Camera slideshow background */}
+          {cameraSlides.length > 0 && (
+            <div className="camera-page__bg">
+              <ImageSlideshow images={cameraSlides} />
+            </div>
+          )}
 
-          <div className="page-center">
-            <EventBranding showPlatform={false} as="h2" className="page-center__branding" />
-            <div className="camera-page__greeting">
+          {/* Dark overlay */}
+          <div className="camera-page__overlay" />
+
+          <div className="camera-page__content">
+            {/* Minimal header */}
+            <header className="camera-page__header">
+              <EventBranding showPlatform={false} as="h2" className="camera-page__branding" />
               <p className="camera-page__welcome">Welcome, {guestName}.</p>
-              <p className="page-center__muted">Capture the moments that matter.</p>
+            </header>
+
+            {/* Offline banner */}
+            <AnimatePresence>
+              {!uploadQueue.isOnline && (
+                <motion.div
+                  className="camera-offline-banner"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <span className="camera-offline-banner__icon">⚠</span>
+                  <span>You're offline. Uploads will resume when connection returns.</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Camera */}
+            <div className="camera-page__camera">
+              <CameraCapture
+                onCapture={handleCapture}
+                onDeviceUpload={handleDeviceUpload}
+                onOpenGallery={() => setShowGallery(true)}
+                mediaCount={myMedia.length}
+                guestName={guestName || 'Guest'}
+              />
             </div>
 
-            <motion.div className="camera-unit" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}>
-              <div className="camera-unit__frame">
-                {cameraState === 'ready' ? (
-                  <video ref={videoRef} className="camera-live" autoPlay muted playsInline aria-label="Live camera preview" />
-                ) : (
-                  <div className="camera-unit__placeholder"><span className="camera-unit__ring" /><span className="camera-unit__label">{cameraState === 'starting' ? 'Opening camera' : 'Your camera preview'}</span></div>
-                )}
-              </div>
-
-              <div className="camera-page__actions">
-                {cameraState !== 'ready' && <button type="button" className="btn-primary camera-page__cta" onClick={() => startCamera()} disabled={cameraState === 'starting'}>Enable camera</button>}
-                {cameraState === 'ready' && <>
-                  <button type="button" className="btn-primary camera-page__cta" onClick={capturePhoto}>Take photo</button>
-                  <button type="button" className={`btn-ghost camera-page__cta${isRecording ? ' is-recording' : ''}`} onClick={toggleRecording}>{isRecording ? 'Stop recording' : 'Record video'}</button>
-                  <button type="button" className="btn-ghost camera-page__cta camera-page__switch" onClick={switchCamera}>Switch camera</button>
-                </>}
-                <button type="button" className="btn-ghost camera-page__cta" onClick={() => fileInputRef.current?.click()}>Choose from device</button>
-                <input ref={fileInputRef} className="sr-only" type="file" accept="image/*,video/*" multiple onChange={chooseFile} />
-              </div>
-
-              {cameraError && <p className="camera-page__error" role="alert">{cameraError}</p>}
-
-              {mediaList.length > 0 && (
-                <div className="media-section">
-                  <div className="media-section__header">
-                    <span className="media-section__count" aria-live="polite">
-                      {mediaList.length} {mediaList.length === 1 ? 'item' : 'items'} selected
+            {/* Upload queue indicator — shows when items are pending */}
+            <AnimatePresence>
+              {activeUploads.length > 0 && (
+                <motion.div
+                  className="camera-upload-bar"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                >
+                  <button
+                    type="button"
+                    className="camera-upload-bar__toggle"
+                    onClick={() => setShowUploadQueue(!showUploadQueue)}
+                  >
+                    <span className="camera-upload-bar__spinner" />
+                    <span>
+                      Uploading {activeUploads.length} {activeUploads.length === 1 ? 'memory' : 'memories'}…
                     </span>
-                  </div>
-                  <ul className="media-grid">
-                    {mediaList.map((item) => (
-                      <li key={item.id} className="media-item">
-                        {item.kind === 'video' ? (
-                          <video src={item.url} controls playsInline aria-label={`Video preview: ${item.name}`} />
-                        ) : (
-                          <img src={item.url} alt={`Selected photo: ${item.name}`} />
-                        )}
-                        <span className="media-item__name">{item.name}</span>
-                        <button
-                          type="button"
-                          className="media-item__remove"
-                          onClick={() => removeMedia(item.id)}
-                          aria-label={`Remove ${item.name}`}
-                        >
-                          ×
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                  </button>
+                </motion.div>
               )}
+            </AnimatePresence>
 
-              <p className="camera-page__note">Your photos and videos stay on this device for now. Upload will be connected in the next backend phase.</p>
-            </motion.div>
+            {/* Upload queue detail panel */}
+            <AnimatePresence>
+              {showUploadQueue && uploadQueue.items.length > 0 && (
+                <motion.div
+                  className="camera-upload-panel"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <div className="camera-upload-panel__header">
+                    <span>Upload Queue</span>
+                    <button
+                      type="button"
+                      className="camera-upload-panel__close"
+                      onClick={() => setShowUploadQueue(false)}
+                      aria-label="Close upload queue"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="camera-upload-panel__list">
+                    {uploadQueue.items.map((item) => (
+                      <UploadItem key={item.id} item={item} onRetry={uploadQueue.retry} />
+                    ))}
+                  </div>
+                  {uploadQueue.failedCount > 0 && (
+                    <button
+                      type="button"
+                      className="camera-upload-panel__retry-all"
+                      onClick={uploadQueue.retryAll}
+                    >
+                      Retry All Failed
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <SiteFooter />
+
+          {/* Toast notifications for captures */}
+          <div className="camera-toast-container">
+            <AnimatePresence>
+              {uploadQueue.items
+                .filter((t) => t.status === 'uploaded' || t.status === 'failed')
+                .slice(-3)
+                .map((toast) => (
+                  <motion.div
+                    key={toast.id}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className={`camera-toast camera-toast--${toast.status === 'uploaded' ? 'success' : 'error'}`}
+                  >
+                    {toast.status === 'uploaded' ? '✓ ' : '✕ '}
+                    {toast.status === 'uploaded'
+                      ? `${toast.type === 'video' ? 'Video' : 'Photo'} uploaded!`
+                      : toast.error || 'Upload failed'}
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Personal Gallery Overlay */}
+          <AnimatePresence>
+            {showGallery && (
+              <motion.div
+                className="gallery-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="gallery-overlay__header">
+                  <button
+                    type="button"
+                    className="gallery-overlay__back"
+                    onClick={() => { setShowGallery(false); setSelectedMedia(null); }}
+                    aria-label="Close gallery"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    <span>Camera</span>
+                  </button>
+                  <span className="gallery-overlay__title">Your Memories</span>
+                  <span className="gallery-overlay__count">{myMedia.length}</span>
+                </div>
+
+                {myMedia.length === 0 ? (
+                  <div className="gallery-overlay__empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.3">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <p>No photos or videos yet.</p>
+                    <p className="gallery-overlay__empty-hint">Your captures and uploads will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="gallery-overlay__grid">
+                    {myMedia.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="gallery-overlay__item"
+                        onClick={() => setSelectedMedia(item)}
+                        aria-label={`${item.media_type === 'VIDEO' ? 'Video' : 'Photo'} — ${item.original_filename}`}
+                      >
+                        {item.media_type === 'VIDEO' ? (
+                          <>
+                            <video
+                              src={item.media_url || getMediaUrl(item.id)}
+                              muted
+                              preload="metadata"
+                            />
+                            <span className="gallery-overlay__play-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                              </svg>
+                            </span>
+                          </>
+                        ) : (
+                          <img
+                            src={item.media_url || getMediaUrl(item.id)}
+                            alt={item.original_filename}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Fullscreen media viewer */}
+          <AnimatePresence>
+            {selectedMedia && (
+              <motion.div
+                className="media-viewer"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setSelectedMedia(null)}
+              >
+                <button
+                  type="button"
+                  className="media-viewer__close"
+                  onClick={() => setSelectedMedia(null)}
+                  aria-label="Close viewer"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+                {selectedMedia.media_type === 'VIDEO' ? (
+                  <video
+                    src={selectedMedia.media_url || getMediaUrl(selectedMedia.id)}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="media-viewer__content"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <img
+                    src={selectedMedia.media_url || getMediaUrl(selectedMedia.id)}
+                    alt={selectedMedia.original_filename}
+                    className="media-viewer__content"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
+                <div className="media-viewer__info">
+                  <span>{guestName}</span>
+                  <span>{new Date(selectedMedia.created_at).toLocaleString()}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <SiteFooter hidden />
         </div>
       </FilmShell>
     </PageTransition>
+  );
+}
+
+// ── Upload item sub-component ──
+function UploadItem({ item, onRetry }: { item: UploadQueueItem; onRetry: (id: string) => void }) {
+  return (
+    <div className={`camera-upload-panel__item camera-upload-panel__item--${item.status}`}>
+      <span className="camera-upload-panel__item-icon">
+        {item.type === 'video' ? '🎬' : '📷'}
+      </span>
+      <span className="camera-upload-panel__item-name" title={item.name}>
+        {item.name.length > 24 ? item.name.slice(0, 21) + '…' : item.name}
+      </span>
+      <span className="camera-upload-panel__item-status">
+        {item.status === 'queued' && 'Waiting…'}
+        {item.status === 'uploading' && <span className="camera-upload-panel__mini-spinner" />}
+        {item.status === 'uploaded' && '✓'}
+        {item.status === 'failed' && (
+          <button
+            type="button"
+            className="camera-upload-panel__retry-btn"
+            onClick={() => onRetry(item.id)}
+            aria-label="Retry upload"
+          >
+            ↻
+          </button>
+        )}
+      </span>
+    </div>
   );
 }

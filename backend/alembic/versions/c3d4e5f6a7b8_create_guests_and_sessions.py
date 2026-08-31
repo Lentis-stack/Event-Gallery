@@ -26,8 +26,7 @@ depends_on = None
 
 def upgrade() -> None:
     # Success: create the guest_session_status enum type.
-    guest_status = sa.Enum("ACTIVE", "REVOKED", "EXPIRED", name="guest_session_status")
-    guest_status.create(op.get_bind(), checkfirst=True)
+    op.execute("""DROP TYPE IF EXISTS guest_session_status; CREATE TYPE guest_session_status AS ENUM ('ACTIVE', 'REVOKED', 'EXPIRED')""")
 
     # --- guests table ---
     op.create_table(
@@ -52,7 +51,7 @@ def upgrade() -> None:
         sa.Column("token_hash", sa.String(length=64), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("ACTIVE", "REVOKED", "EXPIRED", name="guest_session_status"),
+            sa.Text(),
             nullable=False,
             server_default="ACTIVE",
         ),
@@ -79,6 +78,6 @@ def downgrade() -> None:
     op.drop_table("guest_sessions")
     op.drop_index("ix_guests_event_id", table_name="guests")
     op.drop_table("guests")
-    sa.Enum("ACTIVE", "REVOKED", "EXPIRED", name="guest_session_status").drop(
+    sa.Text().drop(
         op.get_bind(), checkfirst=True
     )

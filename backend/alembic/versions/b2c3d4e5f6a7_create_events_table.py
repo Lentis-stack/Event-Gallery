@@ -25,12 +25,10 @@ depends_on = None
 
 def upgrade() -> None:
     # Create the event_status enum type (LIVE / ENDED / ARCHIVED).
-    event_status = sa.Enum("LIVE", "ENDED", "ARCHIVED", name="event_status")
-    event_status.create(op.get_bind(), checkfirst=True)
+    op.execute("""DROP TYPE IF EXISTS event_status; CREATE TYPE event_status AS ENUM ('LIVE', 'ENDED', 'ARCHIVED')""")
 
     # Create the theme_choice enum type (gold / blue / rose / emerald).
-    theme_choice = sa.Enum("gold", "blue", "rose", "emerald", name="theme_choice")
-    theme_choice.create(op.get_bind(), checkfirst=True)
+    op.execute("""DROP TYPE IF EXISTS theme_choice; CREATE TYPE theme_choice AS ENUM ('gold', 'blue', 'rose', 'emerald')""")
 
     # --- events table ---
     op.create_table(
@@ -46,13 +44,13 @@ def upgrade() -> None:
         sa.Column("event_date", sa.Date(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("LIVE", "ENDED", "ARCHIVED", name="event_status"),
+            sa.Text(),
             nullable=False,
             server_default="LIVE",
         ),
         sa.Column(
             "theme",
-            sa.Enum("gold", "blue", "rose", "emerald", name="theme_choice"),
+            sa.Text(),
             nullable=False,
             server_default="gold",
         ),
@@ -81,9 +79,9 @@ def downgrade() -> None:
     op.drop_index("ix_events_slug", table_name="events")
     op.drop_table("events")
     # Drop the enum types.
-    sa.Enum("gold", "blue", "rose", "emerald", name="theme_choice").drop(
+    sa.Text().drop(
         op.get_bind(), checkfirst=True
     )
-    sa.Enum("LIVE", "ENDED", "ARCHIVED", name="event_status").drop(
+    sa.Text().drop(
         op.get_bind(), checkfirst=True
     )

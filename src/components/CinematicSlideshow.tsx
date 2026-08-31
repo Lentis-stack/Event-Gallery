@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { eventConfig, SLIDE_DURATION, TRANSITION_DURATION } from '../config/event';
+import { getActiveEventConfig } from '../services/eventBridge';
+import { SLIDE_DURATION, TRANSITION_DURATION } from '../config/event';
 import type { EventImage } from '../config/event';
 
 interface CinematicSlideshowProps {
@@ -9,15 +10,28 @@ interface CinematicSlideshowProps {
 
 /**
  * Full-screen cinematic slideshow with Ken Burns crossfade.
- * Each image gently scales 1 -> 1.06 while displayed, then crossfades
- * into the next image which continues its own slow drift.
+ * Preloads ALL images on mount so transitions never flash dark.
+ * Each image gently scales 1 -> 1.06 while displayed, then
+ * crossfades into the next image which continues its own slow drift.
  */
-export default function CinematicSlideshow({ images = eventConfig.images }: CinematicSlideshowProps) {
+const _defaultConfig = getActiveEventConfig();
+
+export default function CinematicSlideshow({ images = _defaultConfig.images }: CinematicSlideshowProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Advance the active slide on a fixed interval.
+  // --- Preload all images on mount ----------------------------
+  // Without this, the first time a slide activates the browser
+  // has to fetch the image, causing a dark flash during crossfade.
   useEffect(() => {
-    if (images.length === 0) return;
+    images.forEach((img) => {
+      const preload = new Image();
+      preload.src = img.src;
+    });
+  }, [images]);
+
+  // --- Advance slide on a fixed interval ----------------------
+  useEffect(() => {
+    if (images.length <= 1) return;
     const id = window.setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % images.length);
     }, SLIDE_DURATION);
@@ -28,31 +42,50 @@ export default function CinematicSlideshow({ images = eventConfig.images }: Cine
     return null;
   }
 
-  return (
-    <div className="slideshow" aria-hidden="true">
-      {images.map((image, index) => {
-        // The slide is "active" when it's the current one.
-        const isActive = index === activeIndex;
-        // The previous slide stays mounted during the crossfade,
-        // so we render active and the one before it.
-        const prevIndex = (activeIndex - 1 + images.length) % images.length;
-        const isVisible = isActive || index === prevIndex;
+  // If there's only one image, show it static (no transition).
+  if (images.length === 1) {
+    const img = images[0];
+    return (
+      <div className='slideshow' aria-hidden='true'>
+        <div className='slideshow__slide' style={{ opacity: 1 }}>
+          <div className='slideshow__kenburns'>
+            <img src={img.src} alt={img.alt} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        if (!isVisible) return null;
+  return (
+    <div className='slideshow' aria-hidden='true'>
+      {images.map((image, index) => {
+        const isActive = index === activeIndex;
+        const isPast = index === (activeIndex - 1 + images.length) % images.length;
+
+        // Render active slide + the previous slide (for crossfade).
+        // Once the previous slide has fully faded out, React unmounts it.
+        if (!isActive && !isPast) return null;
 
         return (
           <motion.div
             key={image.src}
-            className="slideshow__slide"
+            className='slideshow__slide'
+            // Start invisible; only the active slide animates to 1.
             initial={{ opacity: 0 }}
             animate={{ opacity: isActive ? 1 : 0 }}
-            transition={{ duration: TRANSITION_DURATION / 1000, ease: 'easeInOut' }}
+            transition={{
+              duration: TRANSITION_DURATION / 1000,
+              ease: 'easeInOut',
+            }}
           >
             <motion.div
-              className="slideshow__kenburns"
+              className='slideshow__kenburns'
               initial={{ scale: 1 }}
               animate={{ scale: isActive ? 1.06 : 1 }}
-              transition={{ duration: SLIDE_DURATION / 1000, ease: 'linear' }}
+              transition={{
+                duration: SLIDE_DURATION / 1000,
+                ease: 'linear',
+              }}
             >
               <img src={image.src} alt={image.alt} />
             </motion.div>

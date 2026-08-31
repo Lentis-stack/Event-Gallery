@@ -12,7 +12,7 @@
 // Data is provided by the mock host service (frontend-only).
 // ============================================================
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import HostLayout from '../../components/host/HostLayout';
 import GalleryMediaCard from '../../components/host/GalleryMediaCard';
 import ConfirmDialog from '../../components/host/ConfirmDialog';
@@ -22,15 +22,40 @@ import {
   setMediaStatus,
   deleteMedia,
 } from '../../services/mockHostService';
+import type { Event } from '../../types/event';
 import type { GalleryMedia, MediaStatus } from '../../types/gallery';
 
 type FilterStatus = 'all' | MediaStatus;
 type ViewMode = 'grid' | 'list';
 type SortOrder = 'newest' | 'oldest';
 
+const EMPTY_EVENT: Event = { id: '', slug: '', name: 'Loading...', subtitle: '', hostName: '', hostEmail: '', eventDate: '', status: 'draft', theme: 'gold', slides: [], totalUploads: 0, photoCount: 0, videoCount: 0, contributingGuests: 0, storageUsedMb: 0, guestLink: '', archived: false };
+
 export default function HostGalleryPage() {
-  const [event] = useState(() => getAssignedEvent());
-  const [media, setMedia] = useState<GalleryMedia[]>(() => getGalleryMedia());
+  const [event, setEvent] = useState<Event>(EMPTY_EVENT);
+  const [media, setMedia] = useState<GalleryMedia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    Promise.all([getAssignedEvent(), getGalleryMedia()])
+      .then(([e, m]) => {
+        if (cancelled) return;
+        setEvent(e);
+        setMedia(m);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err?.message || 'Failed to load gallery. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
   const [view, setView] = useState<ViewMode>('grid');
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [search, setSearch] = useState('');
@@ -64,13 +89,13 @@ export default function HostGalleryPage() {
     return list;
   }, [media, filter, search, sort]);
 
-  const handleStatus = (id: string, status: MediaStatus) => {
-    setMedia(setMediaStatus(id, status));
+  const handleStatus = async (id: string, status: MediaStatus) => {
+    setMedia(await setMediaStatus(id, status));
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return;
-    setMedia(deleteMedia(deleteTarget.id));
+    setMedia(await deleteMedia(deleteTarget.id));
     setDeleteTarget(null);
   };
 
@@ -89,27 +114,55 @@ export default function HostGalleryPage() {
             <p className="host-gallery__eyebrow">Gallery Management</p>
             <h1 className="host-gallery__title">Memories</h1>
           </div>
-          <div className="host-gallery__view-toggle" role="group" aria-label="View mode">
-            <button
-              type="button"
-              className={`host-gallery__view-btn${view === 'grid' ? ' is-active' : ''}`}
-              onClick={() => setView('grid')}
-              aria-pressed={view === 'grid'}
-            >
-              Grid
-            </button>
-            <button
-              type="button"
-              className={`host-gallery__view-btn${view === 'list' ? ' is-active' : ''}`}
-              onClick={() => setView('list')}
-              aria-pressed={view === 'list'}
-            >
-              List
-            </button>
-          </div>
+          {!loading && !error && (
+            <div className="host-gallery__view-toggle" role="group" aria-label="View mode">
+              <button
+                type="button"
+                className={`host-gallery__view-btn${view === 'grid' ? ' is-active' : ''}`}
+                onClick={() => setView('grid')}
+                aria-pressed={view === 'grid'}
+              >
+                Grid
+              </button>
+              <button
+                type="button"
+                className={`host-gallery__view-btn${view === 'list' ? ' is-active' : ''}`}
+                onClick={() => setView('list')}
+                aria-pressed={view === 'list'}
+              >
+                List
+              </button>
+            </div>
+          )}
         </header>
 
+        {/* Loading state */}
+        {loading && (
+          <div className="host-gallery__loading">
+            <div className="host-gallery__spinner" />
+            <p>Loading gallery…</p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && !loading && (
+          <div className="host-gallery__error">
+            <p>{error}</p>
+            <button type="button" className="btn-primary" onClick={() => {
+              setLoading(true);
+              setError(null);
+              Promise.all([getAssignedEvent(), getGalleryMedia()])
+                .then(([e, m]) => { setEvent(e); setMedia(m); })
+                .catch((err) => setError(err?.message || 'Failed to load gallery.'))
+                .finally(() => setLoading(false));
+            }}>
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Controls */}
+        {!loading && !error && (
         <div className="host-gallery__controls">
           <input
             type="search"
@@ -147,26 +200,29 @@ export default function HostGalleryPage() {
             </select>
           </label>
         </div>
+        )}
 
         {/* Grid / List */}
-        {filtered.length === 0 ? (
-          <p className="host-gallery__empty">
-            No memories match your filters. Try a different search or filter.
-          </p>
-        ) : (
-          <div className={`host-gallery__items host-gallery__items--${view}`}>
-            {filtered.map((m) => (
-              <GalleryMediaCard
-                key={m.id}
-                media={m}
-                onStatusChange={handleStatus}
-                onDelete={(id) => {
-                  const target = media.find((x) => x.id === id);
-                  if (target) setDeleteTarget(target);
-                }}
-              />
-            ))}
-          </div>
+        {!loading && !error && (
+          filtered.length === 0 ? (
+            <p className="host-gallery__empty">
+              No guest memories yet. Share your event link to get started.
+            </p>
+          ) : (
+            <div className={`host-gallery__items host-gallery__items--${view}`}>
+              {filtered.map((m) => (
+                <GalleryMediaCard
+                  key={m.id}
+                  media={m}
+                  onStatusChange={handleStatus}
+                  onDelete={(id) => {
+                    const target = media.find((x) => x.id === id);
+                    if (target) setDeleteTarget(target);
+                  }}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
 

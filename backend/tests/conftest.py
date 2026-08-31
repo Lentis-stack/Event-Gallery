@@ -87,7 +87,10 @@ def client():
 
 @pytest.fixture(autouse=True)
 def clean_tables():
-    """Clear all rows between tests so tests are independent."""
+    """Clear all rows AND rate limits between tests so tests are independent."""
+    from app.core.rate_limit import reset_all_rate_limits
+    reset_all_rate_limits()
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
+    reset_all_rate_limits()

@@ -30,6 +30,24 @@
   --max-content: 1080px;
   --gutter: clamp(20px, 5vw, 64px);
 }
+/* ============================================================
+   Theme overrides — set via data-theme attribute on <body>.
+   Each theme redefines --gold / --gold-soft so every component
+   that uses var(--gold) automatically picks up the new color.
+   ============================================================ */
+[data-theme="blue"] {
+  --gold: #5a8db8;
+  --gold-soft: rgba(90, 141, 184, 0.25);
+}
+[data-theme="rose"] {
+  --gold: #c98a8a;
+  --gold-soft: rgba(201, 138, 138, 0.25);
+}
+[data-theme="emerald"] {
+  --gold: #6aa98a;
+  --gold-soft: rgba(106, 169, 138, 0.25);
+}
+
 
 /* ---------- Reset ---------- */
 *,

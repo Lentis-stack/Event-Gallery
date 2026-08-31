@@ -19,11 +19,12 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_optional_current_user
+from app.core.rate_limit import check_media_upload_rate_limit
 from app.db.session import get_db
 from app.models.media import ProcessingStatus
 from app.models.user import User
@@ -77,9 +78,20 @@ async def upload_media(
     slug: str,
     file: UploadFile = File(..., description="Photo (JPEG/PNG/WebP) or video (MP4/WebM/MOV)"),
     x_guest_token: str | None = Header(default=None),
+    request: Request = None,
     db: Session = Depends(get_db),
 ) -> MediaUploadResponse:
     _require_token(x_guest_token)
+
+    # SEC-006: Rate limit media uploads per IP per event.
+    ip = request.client.host if request and request.client else None
+    allowed, retry_after = check_media_upload_rate_limit(ip, slug)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Upload rate limit reached. Please try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
 
     # Read the file bytes (bounded by the app's max video size to
     # avoid unbounded memory use).
@@ -125,7 +137,13 @@ def list_my_media(
     _require_token(x_guest_token)
     items = media_service.list_my_media(db, slug, x_guest_token)
     return MediaListResponse(
-        items=[MediaOut.model_validate(m) for m in items],
+        items=[
+            MediaOut(
+                **MediaOut.model_validate(m).model_dump(),
+                media_url=f"/api/media/{m.thumbnail_key or m.optimized_key or m.storage_key}" if m.storage_key else None,
+            )
+            for m in items
+        ],
         total=len(items),
     )
 

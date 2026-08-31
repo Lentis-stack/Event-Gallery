@@ -46,21 +46,14 @@ logger = logging.getLogger(__name__)
 def _get_live_event_by_slug(db: Session, slug: str) -> Event:
     """
     Return the event, but only if it exists AND is LIVE.
-    A guest cannot register for a non-existent, ended, or archived
-    event. We return 404 for a missing slug and 400 for a known
-    event that isn't live (so we don't leak event existence to
-    random probes, but give a clear message when the event is real).
+    SEC-017: Returns 404 for ALL non-accessible events (missing,
+    ended, archived) to prevent event existence enumeration.
     """
     event = db.scalar(select(Event).where(Event.slug == slug))
-    if event is None:
+    if event is None or event.status != EventStatus.LIVE:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found.",
-        )
-    if event.status != EventStatus.LIVE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This event is not currently accepting guests.",
         )
     return event
 

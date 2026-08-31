@@ -39,7 +39,7 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, String
+from sqlalchemy import BigInteger, Date, DateTime, Enum, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -47,7 +47,8 @@ from app.models.user import utcnow
 
 
 class EventStatus(str, enum.Enum):
-    """Lifecycle status of an event. No DRAFT in Phase 3."""
+    """Lifecycle status of an event."""
+    CREATED = "CREATED"
     LIVE = "LIVE"
     ENDED = "ENDED"
     ARCHIVED = "ARCHIVED"
@@ -59,6 +60,12 @@ class ThemeChoice(str, enum.Enum):
     BLUE = "blue"
     ROSE = "rose"
     EMERALD = "emerald"
+
+
+class EventAccessMode(str, enum.Enum):
+    """Event access mode: PUBLIC (anyone with link) or PRIVATE (invited guests only)."""
+    PUBLIC = "PUBLIC"
+    PRIVATE = "PRIVATE"
 
 
 def generate_uuid() -> str:
@@ -81,6 +88,18 @@ class Event(Base):
     # Short emotional one-line description.
     subtitle: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # Event type (wedding, birthday, summit, etc.)
+    event_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Event location
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Full event description
+    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+
+    # Custom landing page message shown below "Share Your Memories"
+    landing_message: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+
     # Which HOST user owns this event. FK -> users.id.
     host_id: Mapped[str] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True, nullable=False
@@ -89,15 +108,27 @@ class Event(Base):
     # The calendar date the event takes/happened place on.
     event_date: Mapped[date] = mapped_column(Date, nullable=False)
 
-    # Lifecycle status (LIVE / ENDED / ARCHIVED).
+    # Lifecycle status (CREATED / LIVE / ENDED / ARCHIVED).
     status: Mapped[EventStatus] = mapped_column(
-        Enum(EventStatus, name="event_status"), nullable=False, default=EventStatus.LIVE
+        Enum(EventStatus, name="event_status"), nullable=False, default=EventStatus.CREATED
     )
 
     # Brand theme accent (gold / blue / rose / emerald).
     theme: Mapped[ThemeChoice] = mapped_column(
         Enum(ThemeChoice, name="theme_choice"), nullable=False, default=ThemeChoice.GOLD
     )
+
+    # Event access mode: PUBLIC (anyone with link) or PRIVATE (invited guests only).
+    access_mode: Mapped[EventAccessMode] = mapped_column(
+        Enum(EventAccessMode, name="event_access_mode"),
+        nullable=False,
+        default=EventAccessMode.PUBLIC,
+        server_default="PUBLIC",
+    )
+
+    # Storage tracking (for future tier enforcement)
+    storage_limit_gb: Mapped[int] = mapped_column(default=50, server_default="50")
+    storage_used_bytes: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
 
     # Timestamps (timezone-aware UTC).
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -108,7 +139,7 @@ class Event(Base):
     # Set when archived (soft archive). NULL until archived.
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-# ORM relationship to the owning user. We only need the host's
+    # ORM relationship to the owning user. We only need the host's
     # email/name for admin responses; we never expose password_hash.
     host: Mapped["User"] = relationship()  # type: ignore[name-defined]
 
@@ -116,6 +147,11 @@ class Event(Base):
     # One event -> many guests. Phase 4. CASCADE so deleting an event
     # removes its guests and their sessions.
     guests: Mapped[list["Guest"]] = relationship(  # type: ignore[name-defined]
+        back_populates="event", cascade="all, delete-orphan"
+    )
+
+    # ORM relationship to invited guests for private events.
+    invited_guests: Mapped[list["EventInvitedGuest"]] = relationship(  # type: ignore[name-defined]
         back_populates="event", cascade="all, delete-orphan"
     )
 
